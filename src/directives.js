@@ -3,7 +3,6 @@ const { defaultFieldResolver, GraphQLString } = require('graphql')
 const { formatDate } = require('./utils')
 
 
-
 class LogDirective extends SchemaDirectiveVisitor {
   visitFieldDefinition(field, type) {
     const { resolve = defaultFieldResolver } = field
