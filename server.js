@@ -1,11 +1,32 @@
-const { ApolloServer, PubSub } = require('apollo-server');
+const { ApolloServer, PubSub, SchemaDirectiveVisitor } = require('apollo-server');
 const gql = require('graphql-tag');
+const { defaultFieldResolver, GraphQLString } = require('graphql')
 const pubSub = new PubSub()
 const NEW_ITEM = 'NEW_ITEM'
 
+class LogDirective extends SchemaDirectiveVisitor {
+  visitFieldDefinition(field) {
+    const resolver = field.resolve || defaultFieldResolver
+
+    // Using arguments in directive
+    field.args.push({
+      type: GraphQLString,
+      name: 'message'
+    })
+    field.resolve = (root, { message, ...rest }, ctx, info) => {
+      // field.resolve = (args) => {
+      const { message: schemaMessage } = this.args
+      console.log('custom directive - ', message || schemaMessage);
+      return resolver.call(this, root, rest, ctx, info)
+    }
+  }
+}
+
 const typeDefs = gql`
+  directive @log(message: String = "default message") on FIELD_DEFINITION
+
   type User {
-    id: ID!
+    id: ID! @log
     username: String!
     createdAt: Int!
   }
@@ -13,6 +34,10 @@ const typeDefs = gql`
   type Settings {
     user: User!
     theme: String!
+  }
+
+  type Subscription {
+    newItem: Item!
   }
 
   type Item {
@@ -34,7 +59,7 @@ const typeDefs = gql`
     createItem(task: String!): Item
   }
 
-  type Subscription {
+  type SignupInput {
     newItem: Item
   }
 `;
@@ -88,6 +113,9 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  schemaDirectives: {
+    log: LogDirective
+  },
   context({ connection }) {
     if (connection) return { ...connection.context }
   },
