@@ -36,11 +36,6 @@ module.exports = {
       return models.Settings.updateOne({ user: user.id }, input)
     }),
 
-    // createPost: authenticated((_, { input }, { user, models }) => {
-    //   const post = models.Post.createOne({ ...input, author: user.id })
-    //   pubSub.publish(NEW_POST, { newPost: post })
-    //   return post
-    // }), 
     createPost: (_, { input }, { user, models }) => {
       const post = models.Post.createOne({ ...input, author: user.id })
       pubSub.publish(NEW_POST, { newPost: post })
